@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import { BrowserRouter ,Route } from 'react-router-dom'
 
 import { Home } from './pages/Home';
@@ -13,7 +13,7 @@ type User = {
 
 type AuthContextType = {
   user: User | undefined,
-  signInWithGoogle: () => void;
+  SignInWithGoogle: () => Promise<void>;
 }
 
 export const AuthContext = createContext({} as AuthContextType)
@@ -21,11 +21,34 @@ export const AuthContext = createContext({} as AuthContextType)
 function App() {
   const [user, setUser] = useState<User>()
 
-  const SignInWithGoogle = () => {
+  useEffect(() => {
+    //verifica se já estava autenticado
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if(user) {
+        const { displayName, photoURL, uid } = user
+
+        if(!displayName || !photoURL) {
+          throw new Error('Missing infomation from Google Account')
+        }
+
+        setUser({
+          id: uid,
+          name: displayName,
+          avatar: photoURL,
+        })
+      }
+    })
+
+    //quanto tiver um evento listener, após ele entrar em ação, se descadastrar desse metodo useEffect sempre no final
+    return () => {  
+      unsubscribe();
+    }
+  }, [])
+
+  const SignInWithGoogle = async () => {
     const provider = new firebase.auth.GoogleAuthProvider()
 
-    auth.signInWithPopup(provider).then(result => {
-      console.log(result)
+    const result = await auth.signInWithPopup(provider)
 
       if(result.user) {
         const { displayName, photoURL, uid } = result.user
@@ -41,9 +64,6 @@ function App() {
         })
 
       }
-
-
-    })
 
   }
 
