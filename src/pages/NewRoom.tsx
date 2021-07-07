@@ -20,7 +20,7 @@ export function NewRoom() {
         event.preventDefault() 
 
         if(newRoom.trim() === '') {
-            return
+            return;
         }
 
         //criar a sessão de dados
